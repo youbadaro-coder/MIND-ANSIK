@@ -1,0 +1,45 @@
+/* 전역 애니메이션 및 커스텀 스타일 */
+
+body {
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 쫀득한 버튼 클릭 효과 */
+button {
+    transition: transform 0.1s ease-in-out;
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+/* 타이머 숫자 폰트 가독성 */
+#timer-display {
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 스크롤바 숨기기 */
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* 배경 블러 효과 최적화 */
+.glass {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+/* 귀여운 바운스 애니메이션 */
+@keyframes cute-float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+.floating {
+    animation: cute-float 3s ease-in-out infinite;
+}

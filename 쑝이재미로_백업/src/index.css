@@ -1,0 +1,63 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: "Outfit", "Inter", sans-serif;
+  --color-premium-gold: #D4AF37;
+  --color-premium-dark: #0A0A0A;
+  --color-premium-gray: #1A1A1A;
+  --background-image-premium-gradient: linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%);
+  --background-image-gold-gradient: linear-gradient(135deg, #D4AF37 0%, #F4D03F 100%);
+}
+
+@keyframes showcase-spin {
+  0% { transform: perspective(1200px) rotateY(-25deg) scale(1.02); }
+  50% { transform: perspective(1200px) rotateY(25deg) scale(1.02); }
+  100% { transform: perspective(1200px) rotateY(-25deg) scale(1.02); }
+}
+
+.animate-showcase {
+  animation: showcase-spin 8s ease-in-out infinite;
+  box-shadow: 0 0 50px rgba(244, 114, 182, 0.3), 0 0 100px rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  @apply bg-premium-dark text-white font-sans antialiased min-h-screen;
+  background: radial-gradient(circle at top right, #1a1a1a, #000000);
+}
+
+.glass-card {
+  @apply backdrop-blur-md bg-white/5 border border-white/10 rounded-2xl;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.premium-button {
+  @apply px-6 py-3 rounded-full font-semibold transition-all duration-300 transform;
+  background: linear-gradient(135deg, var(--premium-gold) 0%, #f4d03f 100%);
+  color: #000;
+}
+
+.premium-button:hover {
+  @apply scale-105 shadow-lg brightness-110;
+}
+
+.text-gold-gradient {
+  @apply bg-clip-text text-transparent bg-gold-gradient;
+}
+
+/* Custom animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}

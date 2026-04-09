@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemma-4 E4B Studio</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <aside class="reveal">
+        <div class="brand">
+            <div class="status-dot" id="status-dot"></div>
+            <h1>ANNIE CORE</h1>
+        </div>
+        <div class="config-section">
+            <div class="input-field">
+                <label>Model Endpoint</label>
+                <input type="text" id="api-url" value="http://localhost:11434/v1/chat/completions">
+            </div>
+            <div class="input-field">
+                <label>Target Model (E4B Preferred)</label>
+                <select id="model-select"></select>
+            </div>
+            <button id="check-connection" class="btn-primary">Initialize System</button>
+        </div>
+        <div class="status-area">
+            <div id="log-content"><p>Awaiting Team Leader's command...</p></div>
+        </div>
+    </aside>
+    <main>
+        <header class="chat-header reveal">
+            <div>
+                <h2>Gemma-4 : E4B Project</h2>
+                <p id="ai-status">System: Idle</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span>Search Mode</span>
+                <label class="switch"><input type="checkbox" id="search-toggle"><span class="slider"></span></label>
+            </div>
+        </header>
+        <section id="chat-messages"></section>
+        <section class="input-container reveal">
+            <div class="input-wrapper">
+                <textarea id="user-input" placeholder="Enter directive..." rows="1"></textarea>
+                <button id="send-btn" class="icon-btn">GO</button>
+            </div>
+        </section>
+    </main>
+    <script src="main.js"></script>
+</body>
+</html>
