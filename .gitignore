@@ -16,3 +16,6 @@ target/
 build/
 bin/
 obj/
+
+.tmp/
+*.mp4
