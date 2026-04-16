@@ -104,20 +104,27 @@ async def main():
             audioclip = AudioFileClip(a_path)
             videoclip = VideoFileClip(v_path)
             
-            # Resize/Crop
+            # 1. Resize/Crop to fill screen
             videoclip = videoclip.resized(height=target_size[1])
             if videoclip.w > target_size[0]:
                 videoclip = videoclip.cropped(x1=(videoclip.w - target_size[0])//2, width=target_size[0])
             
-            # Loop/Trim
+            # 2. Loop/Trim to match audio
             if videoclip.duration < audioclip.duration:
                 videoclip = videoclip.with_effects([Loop(duration=audioclip.duration)])
             else:
                 videoclip = videoclip.with_duration(audioclip.duration)
             
+            # 3. Premium Zoom (Ken Burns) Effect
+            # Slow zoom-in from 1.0 to 1.1 scale
+            dur = videoclip.duration
+            videoclip = videoclip.with_effects([
+                lambda clip: clip.resized(lambda t: 1.0 + 0.1 * (t/dur))
+            ])
+            
             videoclip = videoclip.with_audio(audioclip)
             
-            # Captions
+            # 4. Enhanced Captions
             cap_img = create_caption_img(txt, target_size[0], target_size[1])
             cap_clip = ImageClip(cap_img).with_duration(audioclip.duration).with_position('center')
             
@@ -131,6 +138,21 @@ async def main():
 
     final = concatenate_videoclips(clips, method="compose")
     
+    # 5. Add Progress Bar (Animated)
+    def make_progress_bar(t):
+        bar_w = int((t / final.duration) * target_size[0])
+        bar_h = 12
+        img = Image.new('RGBA', (target_size[0], target_size[1]), (0,0,0,0))
+        draw = ImageDraw.Draw(img)
+        # Progress background (subtle)
+        draw.rectangle([0, target_size[1]-bar_h, target_size[0], target_size[1]], fill=(0,0,0,100))
+        # Active progress (Bright color)
+        draw.rectangle([0, target_size[1]-bar_h, bar_w, target_size[1]], fill=(0, 200, 255, 200))
+        return np.array(img)
+    
+    prog_bar = VideoClip(make_progress_bar, duration=final.duration).with_position('bottom')
+    final = CompositeVideoClip([final, prog_bar])
+
     # BGM
     bgm_path = os.path.join(job_tmp, "bgm.mp3")
     if os.path.exists(bgm_path):

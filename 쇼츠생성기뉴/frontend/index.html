@@ -277,11 +277,15 @@
     </header>
 
     <!-- Active Engine Status -->
-    <div style="display: flex; justify-content: center; margin-bottom: 40px;">
-        <div class="ai-chip local" style="padding: 10px 24px; font-size: 0.95rem; font-weight: 700; cursor: default;">
-            <span class="ai-dot" style="width: 10px; height: 10px; box-shadow: 0 0 10px var(--accent);"></span> 
-            ACTIVE ENGINE: GEMMA 4 로컬 (♾️ 무제한 가동 중)
-        </div>
+    <div class="ai-status-bar" id="statusBar">
+        <div class="ai-chip" id="status-gemini"><span class="ai-dot"></span> GEMINI AI: <span class="val">Checking...</span></div>
+        <div class="ai-chip" id="status-pexels"><span class="ai-dot"></span> PEXELS VIDEO: <span class="val">Checking...</span></div>
+        <div class="ai-chip local"><span class="ai-dot"></span> LOCAL ENGINE: <span class="val">ENABLED</span></div>
+    </div>
+
+    <!-- Fallback Info -->
+    <div id="fallbackInfo" class="hidden" style="text-align: center; margin-bottom: 24px; font-size: 0.85rem; color: var(--warn); background: rgba(255, 150, 0, 0.05); padding: 12px; border-radius: 12px; border: 1px dashed var(--warn);">
+        ⚠️ Pexels API 키가 없습니다. <strong>'시네마틱 AI 모션 그래픽'</strong> 폴백 모드로 가동됩니다. (영상 클립 대신 예술적인 움직이는 배경이 사용됩니다)
     </div>
 
     <!-- Generator Card -->
@@ -364,6 +368,34 @@
     const btn = document.getElementById('generateBtn');
     const jobsList = document.getElementById('jobsList');
     let polling = {};
+
+    // Initial Config Check
+    async function checkConfig() {
+        try {
+            const r = await fetch(`${API}/api/config`);
+            const data = await r.json();
+            
+            const g = document.getElementById('status-gemini');
+            const p = document.getElementById('status-pexels');
+            const f = document.getElementById('fallbackInfo');
+
+            if (data.has_gemini) {
+                g.classList.add('active');
+                g.querySelector('.val').textContent = 'CONNECTED';
+            } else {
+                g.querySelector('.val').textContent = 'MISSING';
+            }
+
+            if (data.has_pexels) {
+                p.classList.add('free');
+                p.querySelector('.val').textContent = 'PRO CLIPS';
+            } else {
+                p.querySelector('.val').textContent = 'FALLBACK';
+                f.classList.remove('hidden');
+            }
+        } catch(e) { console.error('Config fetch failed'); }
+    }
+    checkConfig();
 
     btn.addEventListener('click', async () => {
         const topic = document.getElementById('topic').value.trim();

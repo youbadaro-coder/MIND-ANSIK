@@ -72,7 +72,7 @@ PALETTES = [
 ]
 
 def generate_fallback_video(dest_path, index=0, orientation='portrait', duration=5.0):
-    """Generate a smooth gradient background video as fallback."""
+    """Generate a high-end cinematic canvas as fallback."""
     try:
         from moviepy import VideoClip
 
@@ -88,14 +88,15 @@ def generate_fallback_video(dest_path, index=0, orientation='portrait', duration
             base_gradient[y, :] = c1 * (1 - t) + c2 * t
 
         def make_frame(t):
-            # Slow animated pulse effect
-            pulse = 0.85 + 0.15 * np.sin(t * 1.2)
-            frame = np.clip(base_gradient * pulse, 0, 255).astype(np.uint8)
+            # Slow animated pulse effect + subtle noise
+            pulse = 0.9 + 0.1 * np.sin(t * 0.8)
+            noise = np.random.normal(0, 3, (h, w, 3)).astype(np.float32)
+            frame = np.clip(base_gradient * pulse + noise, 0, 255).astype(np.uint8)
             return frame
 
         clip = VideoClip(make_frame, duration=duration)
         clip.write_videofile(
-            dest_path, fps=24, codec="libx264",
+            dest_path, fps=12, codec="libx264", # Low FPS for fallback is fine and fast
             audio=False, preset="ultrafast",
             logger=None
         )
@@ -122,6 +123,9 @@ def main():
     segments = data.get('segments', [])
     orientation = data.get('orientation', 'portrait')
 
+    if not PEXELS_API_KEY:
+        print("[WARNING] PEXELS_API_KEY is missing. Using Premium Motion Graphics fallbacks.")
+
     print(f"Collecting assets for {len(segments)} segments...")
 
     for i, seg in enumerate(segments):
@@ -133,6 +137,10 @@ def main():
             queries = seg.get('pexels_search', ["nature cinematic"])
             if isinstance(queries, str):
                 queries = [queries]
+            
+            # Add some variety to queries if first one fails
+            queries.extend(["cinematic wallpaper", "abstract background"])
+
             for q in queries:
                 print(f"Segment {i}: Fetching from Pexels '{q}'...")
                 link = fetch_pexels_video(q, orientation)
@@ -141,10 +149,10 @@ def main():
                     print(f"Segment {i}: Pexels OK")
                     break
 
-        # Fallback: generate gradient video
+        # Fallback: generate premium motion canvas
         if not pexels_ok:
-            print(f"Segment {i}: Generating gradient fallback video...")
-            generate_fallback_video(dest, index=i, orientation=orientation, duration=6.0)
+            print(f"Segment {i}: Generating cinematic fallback canvas...")
+            generate_fallback_video(dest, index=i, orientation=orientation, duration=10.0) # Longer for safety
 
     # BGM Fallback - silent mp3 (no BGM better than a broken URL)
     bgm_dest = os.path.join(job_tmp, "bgm.mp3")

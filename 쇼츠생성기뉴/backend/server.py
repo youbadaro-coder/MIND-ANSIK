@@ -188,6 +188,15 @@ threading.Thread(target=_queue_worker, daemon=True).start()
 def home():
     return jsonify({"service": "Shorts Factory Pro API", "status": "online"})
 
+@app.route("/api/config")
+def get_config():
+    return jsonify({
+        "has_gemini": bool(os.getenv("GEMINI_API_KEY")),
+        "has_pexels": bool(os.getenv("PEXELS_API_KEY")),
+        "has_openai": bool(os.getenv("OPENAI_API_KEY")),
+        "has_anthropic": bool(os.getenv("ANTHROPIC_API_KEY"))
+    })
+
 @app.route("/api/generate", methods=["POST"])
 def generate():
     data = request.json or {}
