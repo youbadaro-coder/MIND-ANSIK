@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shorts Factory Pro | Nova Engine</title>
+    <meta name="description" content="회원가입 없이 AI로 바이럴 쇼츠 영상을 자동 제작하는 프리미엄 툴">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #070a10;
+            --glass: rgba(255,255,255,0.04);
+            --glass-hover: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.1);
+            --primary: hsl(220, 100%, 62%);
+            --primary-glow: rgba(66,133,255,0.25);
+            --accent: hsl(275, 80%, 65%);
+            --success: hsl(150, 80%, 50%);
+            --warn: hsl(38, 100%, 60%);
+            --error: hsl(354, 80%, 55%);
+            --dim: #7a8492;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: #e8edf5;
+            min-height: 100vh;
+        }
+
+        /* Ambient background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -30%; left: 20%;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(66,133,255,0.06) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -20%; right: 10%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(140,82,255,0.05) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+
+        .container { max-width: 960px; margin: 0 auto; padding: 48px 20px; position: relative; z-index: 1; }
+
+        /* Header */
+        header { text-align: center; margin-bottom: 56px; }
+        .logo {
+            font-size: 2.8rem; font-weight: 800; letter-spacing: -2px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .logo-sub { font-size: 0.9rem; color: var(--dim); margin-top: 8px; letter-spacing: 3px; text-transform: uppercase; }
+
+        /* AI Status Bar */
+        .ai-status-bar {
+            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+            margin-bottom: 40px;
+        }
+        .ai-chip {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 100px;
+            border: 1px solid var(--border);
+            background: var(--glass); font-size: 0.8rem;
+            color: var(--dim);
+            transition: all 0.3s;
+        }
+        .ai-chip.active { border-color: var(--primary); color: var(--primary); background: rgba(66,133,255,0.1); }
+        .ai-chip.free { border-color: var(--success); color: var(--success); background: rgba(80,220,140,0.08); }
+        .ai-chip.local { border-color: var(--accent); color: var(--accent); background: rgba(140,82,255,0.08); }
+        .ai-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+        /* Card */
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .card:hover { border-color: rgba(255,255,255,0.18); box-shadow: 0 0 40px rgba(66,133,255,0.07); }
+
+        .section-title {
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 2px;
+            text-transform: uppercase; color: var(--dim);
+            margin-bottom: 24px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Form */
+        .form-group { margin-bottom: 20px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        label { display: block; margin-bottom: 8px; font-size: 0.8rem; font-weight: 600; color: var(--dim); letter-spacing: 0.5px; }
+
+        input[type="text"], select {
+            width: 100%; padding: 14px 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 12px; color: #e8edf5;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem; outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+        }
+        input:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+        select option { background: #121726; }
+
+        /* Generate Button */
+        .generate-btn {
+            width: 100%; padding: 18px;
+            background: linear-gradient(135deg, #3b82f6 0%, #6d28d9 100%);
+            border: none; border-radius: 14px;
+            color: white; font-size: 1rem; font-weight: 700;
+            cursor: pointer; letter-spacing: 0.5px;
+            position: relative; overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+        }
+        .generate-btn::before {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.4s;
+        }
+        .generate-btn:hover::before { left: 100%; }
+        .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(59,130,246,0.45); }
+        .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Jobs */
+        .jobs-header { font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 16px; }
+
+        .job-card {
+            background: rgba(0,0,0,0.25);
+            border: 1px solid var(--border);
+            border-radius: 16px; padding: 20px;
+            margin-bottom: 14px;
+            transition: border-color 0.3s;
+        }
+        .job-card.running { border-color: rgba(66,133,255,0.4); }
+        .job-card.done { border-color: rgba(80,220,140,0.3); }
+        .job-card.error { border-color: rgba(235,87,87,0.4); }
+
+        .job-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+        .job-title { font-weight: 600; font-size: 0.95rem; }
+        .job-meta { font-size: 0.75rem; color: var(--dim); margin-top: 4px; }
+
+        .badge {
+            padding: 4px 10px; border-radius: 100px;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+            white-space: nowrap; flex-shrink: 0; margin-left: 12px;
+        }
+        .badge-pending { background: rgba(255,255,255,0.08); color: var(--dim); }
+        .badge-running { background: rgba(66,133,255,0.15); color: var(--primary); animation: pulse-text 1.5s infinite; }
+        .badge-done { background: rgba(80,220,140,0.15); color: var(--success); }
+        .badge-error { background: rgba(235,87,87,0.15); color: #f87171; }
+
+        @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Progress */
+        .progress-track {
+            height: 4px; background: rgba(255,255,255,0.08);
+            border-radius: 10px; overflow: hidden; margin-bottom: 14px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        .job-timer {
+            display: flex; justify-content: space-between;
+            font-size: 0.72rem; font-weight: 600; color: var(--dim);
+            margin-top: -10px; margin-bottom: 12px;
+        }
+        .timer-val { color: #e8edf5; }
+        .timer-remain { color: var(--warn); animation: pulse-text 2s infinite; }
+
+        /* Discovery Panel */
+        .discovery-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .discovery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .discovery-col { display: flex; flex-direction: column; gap: 12px; }
+        .col-title {
+            font-size: 0.75rem; font-weight: 700; color: var(--dim);
+            text-transform: uppercase; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 8px;
+        }
+        .trend-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px;
+            font-size: 0.85rem; line-height: 1.4;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .trend-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+        .discovery-loading { text-align: center; padding: 40px; color: var(--dim); font-size: 0.9rem; }
+        
+        .btn-discovery {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid var(--border);
+            color: #e8edf5; padding: 8px 16px; border-radius: 100px;
+            font-size: 0.8rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-discovery:hover { border-color: var(--primary); background: rgba(66,133,255,0.1); color: var(--primary); }
+
+        .hidden { display: none !important; }
+
+        @media (max-width: 800px) {
+            .discovery-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Steps */
+        .steps { display: flex; gap: 8px; margin-bottom: 14px; }
+        .step {
+            flex: 1; padding: 8px 4px; text-align: center;
+            border-radius: 8px; font-size: 0.72rem; font-weight: 600;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid var(--border); color: var(--dim);
+            transition: all 0.3s;
+        }
+        .step.done { background: rgba(80,220,140,0.1); border-color: rgba(80,220,140,0.3); color: var(--success); }
+        .step.running { background: rgba(66,133,255,0.1); border-color: rgba(66,133,255,0.3); color: var(--primary); }
+
+        /* Console */
+        .job-log {
+            background: rgba(0,0,0,0.4); border-radius: 10px;
+            padding: 12px 14px; font-family: monospace; font-size: 0.82rem;
+            color: #4ade80; height: 70px; overflow-y: auto;
+            scrollbar-width: thin; scrollbar-color: #333 transparent;
+        }
+
+        .download-btn {
+            display: block; text-align: center; margin-top: 12px;
+            padding: 10px 20px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white; font-weight: 700; text-decoration: none;
+            font-size: 0.9rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.3);
+        }
+        .download-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,185,129,0.5); }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--dim); }
+        .empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+        .empty-state p { font-size: 0.9rem; }
+
+        @media (max-width: 560px) {
+            .form-row { grid-template-columns: 1fr; }
+            .logo { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="logo">Shorts Factory Pro</div>
+        <div class="logo-sub">Nova AI Engine v2.0 — No Login Required</div>
+    </header>
+
+    <!-- AI Model Status -->
+    <div class="ai-status-bar" id="aiStatusBar">
+        <div class="ai-chip free"><span class="ai-dot"></span> Gemini Flash (무료)</div>
+        <div class="ai-chip"><span class="ai-dot"></span> Gemini 2.5</div>
+        <div class="ai-chip"><span class="ai-dot"></span> Claude Sonnet</div>
+        <div class="ai-chip"><span class="ai-dot"></span> GPT-4o Mini</div>
+        <div class="ai-chip local"><span class="ai-dot"></span> Gemma4 로컬 ♾️</div>
+    </div>
+
+    <!-- Generator Card -->
+    <div class="card">
+        <div class="section-title">▶ New Video Generation</div>
+
+        <div class="form-group">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <label style="margin-bottom: 0;">TOPIC / 주제</label>
+                <button class="btn-discovery" id="discoverBtn">✨ 실시간 트렌드 발견</button>
+            </div>
+            <input type="text" id="topic" placeholder="예: 달에 대한 충격적인 사실 5가지">
+        </div>
+
+        <div id="discoveryPanel" class="hidden" style="margin-top: 24px; padding-top: 24px; border-top: 1px dashed var(--border);">
+            <div class="discovery-grid" id="discoveryGrid">
+                <!-- Columns injected by JS -->
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>CATEGORY / 카테고리</label>
+                <select id="category">
+                    <option value="Knowledge">지식/상식 (Knowledge)</option>
+                    <option value="Touching">감동/힐링 (Touching)</option>
+                    <option value="Provocative">자극/이슈 (Provocative)</option>
+                    <option value="Funny">유머/병맛 (Funny)</option>
+                    <option value="Horror">공포/미스터리 (Horror)</option>
+                    <option value="Motivation">동기부여 (Motivation)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>STYLE / 스타일</label>
+                <select id="style">
+                    <option value="Cinematic">시네마틱 (Cinematic)</option>
+                    <option value="Anime">애니메이션 (Anime)</option>
+                    <option value="Documentary">다큐멘터리 (Documentary)</option>
+                    <option value="Cyberpunk">사이버펑크 (Cyberpunk)</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="generate-btn" id="generateBtn">
+            🚀 AI 대본 생성 및 영상 제작 시작
+        </button>
+    </div>
+
+    <!-- Jobs -->
+    <div id="jobsSection">
+        <div class="jobs-header">Production Queue</div>
+        <div id="jobsList">
+            <div class="empty-state">
+                <div class="icon">🎬</div>
+                <p>주제를 입력하고 생성 버튼을 누르세요</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:5005';
+    const btn = document.getElementById('generateBtn');
+    const jobsList = document.getElementById('jobsList');
+    let polling = {};
+
+    btn.addEventListener('click', async () => {
+        const topic = document.getElementById('topic').value.trim();
+        if (!topic) { alert('주제를 입력하세요!'); return; }
+        
+        btn.disabled = true;
+        btn.textContent = '⏳ Agent 호출 중...';
+
+        try {
+            const r = await fetch(`${API}/api/generate`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    topic,
+                    params: {
+                        category: document.getElementById('category').value,
+                        style: document.getElementById('style').value
+                    }
+                })
+            });
+            const data = await r.json();
+            if (data.ok) {
+                document.getElementById('topic').value = '';
+                // Remove empty state
+                document.querySelector('.empty-state')?.remove();
+                createJobCard(data.job_id, topic);
+                startPolling(data.job_id);
+            }
+        } catch(e) {
+            alert('서버에 연결할 수 없습니다. run_nova.bat을 실행해 주세요.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🚀 AI 대본 생성 및 영상 제작 시작';
+        }
+    });
+
+    // Trend Discovery Logic
+    const discoverBtn = document.getElementById('discoverBtn');
+    const discoveryPanel = document.getElementById('discoveryPanel');
+    const discoveryGrid = document.getElementById('discoveryGrid');
+
+    discoverBtn.addEventListener('click', async () => {
+        discoverBtn.disabled = true;
+        discoverBtn.innerHTML = '🔍 트렌드 수집 중...';
+        discoveryPanel.classList.remove('hidden');
+        discoveryGrid.innerHTML = `
+            <div class="discovery-loading" style="grid-column: 1 / -1;">
+                <p>AI가 구글, 네이버, 유튜브의 실시간 트렌드를 분석 중입니다...</p>
+            </div>
+        `;
+
+        try {
+            const r = await fetch(`${API}/api/trends`);
+            const data = await r.json();
+            if (data.ok) {
+                renderTrends(data.trends);
+            }
+        } catch(e) {
+            discoveryGrid.innerHTML = `<p style="grid-column: 1 / -1; color: var(--error);">트렌드를 가져오는데 실패했습니다.</p>`;
+        } finally {
+            discoverBtn.disabled = false;
+            discoverBtn.innerHTML = '✨ 실시간 트렌드 발견';
+        }
+    });
+
+    function renderTrends(trends) {
+        const sources = [
+            { id: 'google', name: 'Google Trends', icon: '🔍' },
+            { id: 'naver', name: 'Naver News', icon: '📰' },
+            { id: 'youtube', name: 'YouTube Viral', icon: '📺' }
+        ];
+
+        discoveryGrid.innerHTML = sources.map(s => `
+            <div class="discovery-col">
+                <div class="col-title"><span>${s.icon}</span> ${s.name}</div>
+                ${trends[s.id].map(topic => `
+                    <div class="trend-card" onclick="selectTopic('${topic.replace(/'/g, "\\'")}')">
+                        ${topic}
+                    </div>
+                `).join('')}
+            </div>
+        `).join('');
+    }
+
+    function selectTopic(topic) {
+        const input = document.getElementById('topic');
+        input.value = topic;
+        input.focus();
+        // Smooth scroll to options
+        window.scrollTo({ top: input.offsetTop - 100, behavior: 'smooth' });
+    }
+
+    function createJobCard(jobId, topic) {
+        const card = document.createElement('div');
+        card.id = `job-${jobId}`;
+        card.className = 'job-card pending';
+        card.innerHTML = `
+            <div class="job-top">
+                <div>
+                    <div class="job-title">${topic}</div>
+                    <div class="job-meta">ID: ${jobId} &nbsp;•&nbsp; <span class="ai-label">—</span></div>
+                </div>
+                <span class="badge badge-pending">대기중</span>
+            </div>
+            <div class="steps">
+                <div class="step" id="step-script-${jobId}">① 대본</div>
+                <div class="step" id="step-assets-${jobId}">② 소스수집</div>
+                <div class="step" id="step-render-${jobId}">③ 렌더링</div>
+            </div>
+            <div class="progress-track"><div class="progress-fill" id="prog-${jobId}" style="width:0%"></div></div>
+            <div class="job-timer" id="timer-${jobId}">
+                <span>진행 시간: <span class="timer-val">00:00</span></span>
+                <span class="timer-remain">남은 예상 시간: <span class="timer-val">계산 중...</span></span>
+            </div>
+            <div class="job-log" id="log-${jobId}">대기 중...</div>
+        `;
+        jobsList.prepend(card);
+    }
+
+    function startPolling(jobId) {
+        polling[jobId] = setInterval(async () => {
+            try {
+                const r = await fetch(`${API}/api/status/${jobId}`);
+                const job = await r.json();
+                updateJobCard(job);
+                if (job.status === 'done' || job.status === 'error') {
+                    clearInterval(polling[jobId]);
+                }
+            } catch { clearInterval(polling[jobId]); }
+        }, 1500);
+    }
+
+    function updateJobCard(job) {
+        const card = document.getElementById(`job-${job.job_id}`);
+        if (!card) return;
+
+        card.className = `job-card ${job.status}`;
+
+        const badge = card.querySelector('.badge');
+        const labels = { pending: ['대기중', 'badge-pending'], running: ['생성중 ✦', 'badge-running'], done: ['완료!', 'badge-done'], error: ['오류', 'badge-error'] };
+        const [txt, cls] = labels[job.status] || ['—', ''];
+        badge.textContent = txt;
+        badge.className = `badge ${cls}`;
+
+        // Progress
+        const prog = document.getElementById(`prog-${job.job_id}`);
+        if (prog) prog.style.width = `${job.progress}%`;
+
+        // AI Model label
+        const aiLabel = card.querySelector('.ai-label');
+        if (aiLabel && job.ai_model) aiLabel.textContent = `🤖 ${job.ai_model}`;
+
+        // Steps
+        const p = job.progress;
+        const sScript = document.getElementById(`step-script-${job.job_id}`);
+        const sAssets = document.getElementById(`step-assets-${job.job_id}`);
+        const sRender = document.getElementById(`step-render-${job.job_id}`);
+
+        if (p >= 10) { sScript.className = 'step done'; }
+        else if (p > 0) { sScript.className = 'step running'; }
+
+        if (p >= 40) { sAssets.className = 'step done'; }
+        else if (p >= 10) { sAssets.className = 'step running'; }
+
+        if (p === 100) { sRender.className = 'step done'; }
+        else if (p >= 40) { sRender.className = 'step running'; }
+
+        // Logs
+        const logEl = document.getElementById(`log-${job.job_id}`);
+        if (logEl && job.logs?.length > 0) {
+            const last = job.logs[job.logs.length - 1].msg;
+            logEl.textContent = '> ' + last;
+        }
+
+        // Timer Update
+        const timerEl = document.getElementById(`timer-${job.job_id}`);
+        if (timerEl && job.time_metrics) {
+            const elapsedEl = timerEl.querySelector('.timer-val');
+            const remainEl = timerEl.querySelectorAll('.timer-val')[1];
+            
+            elapsedEl.textContent = formatTime(job.time_metrics.elapsed);
+            if (job.status === 'done') {
+                remainEl.textContent = '완료';
+                timerEl.querySelector('.timer-remain').style.color = 'var(--success)';
+            } else if (job.status === 'error') {
+                remainEl.textContent = '실패';
+            } else {
+                remainEl.textContent = '약 ' + formatTime(job.time_metrics.remaining);
+            }
+        }
+
+        // Download
+        if (job.status === 'done' && job.result_url && !card.querySelector('.download-btn')) {
+            const a = document.createElement('a');
+            a.className = 'download-btn';
+            a.href = `${API}${job.result_url}`;
+            a.download = '';
+            a.textContent = '🎬 완성 영상 다운로드';
+            card.appendChild(a);
+        }
+    }
+
+    function formatTime(seconds) {
+        if (!seconds || seconds < 0) return "00:00";
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+</script>
+</body>
+</html>

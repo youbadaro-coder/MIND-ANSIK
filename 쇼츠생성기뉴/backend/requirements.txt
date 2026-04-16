@@ -1,0 +1,11 @@
+flask
+flask-cors
+google-generativeai
+openai
+python-dotenv
+requests
+moviepy
+edge-tts
+pillow
+numpy
+proglog
