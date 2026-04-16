@@ -30,9 +30,12 @@ class NovaLogger(ProgressBarLogger):
                 total = data.get('total', 1)
                 index = data.get('index', 0)
                 if total > 0:
-                    pct = int((index / total) * 100)
-                    if pct % 10 == 0:
-                        print(f"[STATUS] Rendering: {pct}%")
+                    pct = (index / total) * 100
+                    # We output with [PROGRESS] tag for server to parse
+                    # And only if the percentage changed significantly to avoid log flood
+                    if not hasattr(self, '_last_pct') or pct - self._last_pct >= 1.0 or pct >= 99.9:
+                        print(f"[STATUS] [PROGRESS] {pct:.1f}%")
+                        self._last_pct = pct
 
 async def generate_voice(text, voice, path):
     try:
@@ -51,8 +54,11 @@ def create_caption_img(text, w, h):
     except:
         font = ImageFont.load_default()
     
-    wrapper = textwrap.TextWrapper(width=15)
-    lines = wrapper.wrap(text)[:2]
+    # Adjust wrapping width based on orientation (rough estimate)
+    is_landscape = w > h
+    wrap_width = 30 if is_landscape else 15
+    wrapper = textwrap.TextWrapper(width=wrap_width)
+    lines = wrapper.wrap(text)[:2] if not is_landscape else wrapper.wrap(text)[:3]
     
     y = int(h * 0.75)
     for line in lines:

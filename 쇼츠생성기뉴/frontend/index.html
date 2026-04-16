@@ -276,13 +276,12 @@
         <div class="logo-sub">Nova AI Engine v2.0 — No Login Required</div>
     </header>
 
-    <!-- AI Model Status -->
-    <div class="ai-status-bar" id="aiStatusBar">
-        <div class="ai-chip free"><span class="ai-dot"></span> Gemini Flash (무료)</div>
-        <div class="ai-chip"><span class="ai-dot"></span> Gemini 2.5</div>
-        <div class="ai-chip"><span class="ai-dot"></span> Claude Sonnet</div>
-        <div class="ai-chip"><span class="ai-dot"></span> GPT-4o Mini</div>
-        <div class="ai-chip local"><span class="ai-dot"></span> Gemma4 로컬 ♾️</div>
+    <!-- Active Engine Status -->
+    <div style="display: flex; justify-content: center; margin-bottom: 40px;">
+        <div class="ai-chip local" style="padding: 10px 24px; font-size: 0.95rem; font-weight: 700; cursor: default;">
+            <span class="ai-dot" style="width: 10px; height: 10px; box-shadow: 0 0 10px var(--accent);"></span> 
+            ACTIVE ENGINE: GEMMA 4 로컬 (♾️ 무제한 가동 중)
+        </div>
     </div>
 
     <!-- Generator Card -->
@@ -326,6 +325,23 @@
             </div>
         </div>
 
+        <div class="form-row">
+            <div class="form-group">
+                <label>FORMAT / 포맷</label>
+                <select id="video_format" onchange="syncOrientation()">
+                    <option value="short">쇼츠 (Shorts - 60s)</option>
+                    <option value="long">롱폼 (Long-form - 3m+)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>RATIO / 비율</label>
+                <select id="orientation">
+                    <option value="portrait">세로형 (Portrait 9:16)</option>
+                    <option value="landscape">가로형 (Landscape 16:9)</option>
+                </select>
+            </div>
+        </div>
+
         <button class="generate-btn" id="generateBtn">
             🚀 AI 대본 생성 및 영상 제작 시작
         </button>
@@ -364,7 +380,9 @@
                     topic,
                     params: {
                         category: document.getElementById('category').value,
-                        style: document.getElementById('style').value
+                        style: document.getElementById('style').value,
+                        video_format: document.getElementById('video_format').value,
+                        orientation: document.getElementById('orientation').value
                     }
                 })
             });
@@ -383,6 +401,16 @@
             btn.textContent = '🚀 AI 대본 생성 및 영상 제작 시작';
         }
     });
+
+    function syncOrientation() {
+        const fmt = document.getElementById('video_format').value;
+        const orient = document.getElementById('orientation');
+        if (fmt === 'long') {
+            orient.value = 'landscape';
+        } else {
+            orient.value = 'portrait';
+        }
+    }
 
     // Trend Discovery Logic
     const discoverBtn = document.getElementById('discoverBtn');

@@ -16,7 +16,7 @@ start "Nova Backend" cmd /k "cd /d "%~dp0backend" && .venv\Scripts\python.exe se
 :: Open Frontend
 echo [*] Launching Dashboard...
 timeout /t 3 >nul
-start "" "%~dp0frontend\index.html"
+start chrome "%~dp0frontend\index.html"
 
 echo ==================================================
 echo   System Online. Dashboard opened in browser.

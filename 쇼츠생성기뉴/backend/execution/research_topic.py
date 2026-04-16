@@ -28,32 +28,41 @@ def research_topic(category=None, user_topic=None, user_style=None, format_type=
     print(f"[Nova] Category: {selected_category} | Style: {selected_style}", flush=True)
     print(f"[Nova] Topic: {topic_hint}", flush=True)
 
+    role_desc = "world-class AI Content Director specialized in viral YouTube Shorts" if format_type == 'short' else "professional Documentary Screenwriter for deep-dive YouTube videos"
     duration = "50-55 seconds" if format_type == 'short' else "2-3 minutes"
-    num_segments = 8 if format_type == 'short' else 15
+    num_segments = 8 if format_type == 'short' else 20
+    strategy = """
+    1. Hook (0-3s): Shocking claim or unanswerable question.
+    2. Body: Rapid-fire facts or emotional storytelling.
+    3. CTA: Mind-blowing punchline.
+    """ if format_type == 'short' else """
+    1. Introduction (0-20s): Set the stage, explain why this topic matters.
+    2. Chapters (20s+): Break down the topic into 3-4 logical sub-themes.
+    3. Conclusion: Summary and thought-provoking closing statement.
+    """
 
     prompt = f"""
-You are 'Nova', a world-class AI Content Director specialized in viral Korean YouTube Shorts.
-Create a high-retention script for a {duration} YouTube Shorts video.
+You are 'Nova', a {role_desc}.
+Create a high-retention script for a {duration} YouTube {format_type} video in {orientation} orientation.
 
 Category: {selected_category}
 Visual Style: {selected_style}
 Topic/Hint: {topic_hint}
 
-[VIRIAL STRATEGY]
-1. Hook (0-3s): Shocking claim or unanswerable question. Viewers CANNOT swipe away.
-2. Body: Rapid-fire facts or emotional storytelling. Zero filler.
-3. CTA: Mind-blowing punchline or question that drives comments.
+[PRODUCTION STRATEGY]
+{strategy}
 
 [RULES]
 - Language: Korean (MUST use polite formal tone ~습니다/해요체. ZERO informal speech)
-- Keep each segment text SHORT (under 2 sentences) for on-screen captions
+- Keep each segment text concise but meaningful for on-screen captions.
+- For Long-form, provide more descriptive and engaging narrations.
 
 [JSON OUTPUT - return ONLY valid JSON, no markdown]
 {{
-    "topic": "Viral clickbait title in Korean",
+    "topic": "Catchy title in Korean",
     "narration_tone": "Intense/Mysterious/Warm",
     "voice_profile": "ko-KR-SunHiNeural",
-    "bgm_style": "Dramatic Phonk/Cinematic Piano/Dark Synth",
+    "bgm_style": "Dramatic/Cinematic/Lofi",
     "segments": [
         {{
             "text": "Korean script line",

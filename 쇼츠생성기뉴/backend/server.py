@@ -57,7 +57,7 @@ def _log(job_id, msg):
             })
             print(f"[{job_id}] {msg}")
 
-def _run_script(job_id, script_name, args=None):
+def _run_script(job_id, script_name, args=None, stage_weight=(0, 100)):
     script_path = os.path.join(BASE_DIR, "execution", script_name)
     cmd = [BIN_PYTHON, script_path]
     if args:
@@ -79,9 +79,28 @@ def _run_script(job_id, script_name, args=None):
             cwd=BASE_DIR,
             env=env
         )
+        
+        start_w, end_w = stage_weight
+        
         for line in iter(process.stdout.readline, ""):
             if line:
-                _log(job_id, line.strip())
+                line_str = line.strip()
+                _log(job_id, line_str)
+                
+                # Telemetry Parsing: [PROGRESS] 45.2%
+                if "[PROGRESS]" in line_str:
+                    try:
+                        # Extract percentage number
+                        raw_val = line_str.split("[PROGRESS]")[1].split("%")[0].strip()
+                        script_pct = float(raw_val)
+                        
+                        # Map script progress to global stage progress
+                        global_pct = start_w + (script_pct / 100.0) * (end_w - start_w)
+                        with _lock:
+                            _jobs[job_id]["progress"] = round(global_pct, 1)
+                    except:
+                        pass
+        
         process.stdout.close()
         rc = process.wait()
         return rc == 0
@@ -97,33 +116,36 @@ def _pipeline_worker(job):
     
     _log(job_id, "🚀 Starting production pipeline...")
     
-    # Step 1: Research & Script
-    with _lock: _jobs[job_id]["progress"] = 10
+    # Step 1: Research & Script (0% -> 15%)
+    with _lock: _jobs[job_id]["progress"] = 2
     ok = _run_script(job_id, "research_topic.py", [
         job["params"].get("category", ""),
         job["topic"],
         job["params"].get("style", ""),
-        job["params"].get("format", "short"),
+        job["params"].get("video_format", "short"),
         job["params"].get("orientation", "portrait")
-    ])
+    ], stage_weight=(0, 15))
+    
     if not ok:
         with _lock: 
             _jobs[job_id]["status"] = "error"
             _jobs[job_id]["finished_at"] = time.time()
         return
 
-    # Step 2: Fetch Materials
-    with _lock: _jobs[job_id]["progress"] = 40
-    ok = _run_script(job_id, "fetch_materials.py")
+    # Step 2: Fetch Materials (15% -> 40%)
+    with _lock: _jobs[job_id]["progress"] = 15
+    ok = _run_script(job_id, "fetch_materials.py", stage_weight=(15, 40))
     if not ok:
         with _lock: 
             _jobs[job_id]["status"] = "error"
             _jobs[job_id]["finished_at"] = time.time()
         return
 
-    # Step 3: Render Video
-    with _lock: _jobs[job_id]["progress"] = 70
-    ok = _run_script(job_id, "edit_video.py")
+    # Step 3: Render Video (40% -> 100%)
+    with _lock: 
+        _jobs[job_id]["progress"] = 40
+        _jobs[job_id]["render_started_at"] = time.time()
+    ok = _run_script(job_id, "edit_video.py", stage_weight=(40, 100))
     if not ok:
         with _lock: 
             _jobs[job_id]["status"] = "error"
@@ -197,16 +219,54 @@ def status(job_id):
         end = job["finished_at"] or now
         elapsed = int(end - job["started_at"])
         
-        # Estimation logic
+        # Intelligent Stage-Aware Estimation
         if job["status"] == "running":
             prog = job["progress"]
-            # Base estimates (total)
-            if prog <= 10: base = 150
-            elif prog <= 40: base = 120
-            else: base = 90
-            remaining = max(0, base - elapsed)
+            
+            # 1. Base Strategy: Historical minimum speed to avoid optimism
+            # 2. Stage-Specific Weighting
+            if prog <= 2:
+                remaining = 300 # Start with a safe, conservative buffer (5m)
+            elif prog < 40:
+                # Stage 1 & 2 (Research/Fetch) are fast, don't let them skew the render ETA
+                total_est = (elapsed / prog) * 100
+                remaining = int(total_est - elapsed) + 120 # Add rendering buffer
+            else:
+                # Stage 3 (Rendering): Use actual rendering speed
+                # We calculate 'render progress' only
+                render_elapsed = elapsed - (job.get('render_started_at', job['started_at']) - job['started_at'])
+                render_prog = prog - 40
+                if render_prog > 1:
+                    render_speed = render_prog / max(1, render_elapsed) # progress per sec
+                    remaining = int((100 - prog) / render_speed)
+                else:
+                    remaining = 240 # Safe guess for start of rendering
+            
+            # Smoothing & Anti-Rise Logic
+            prev_remaining = job.get('last_remaining', remaining)
+            # If current remaining is higher than before (bad UX), we slow down the rise
+            if remaining > prev_remaining and (now - job.get('last_update', 0) < 5):
+                remaining = int(prev_remaining * 0.9 + remaining * 0.1) # Smooth increase
+
+            # Update cache for next smoothing
+            with _lock:
+                job['last_remaining'] = remaining
+                job['last_update'] = now
+                
+            remaining = max(3, remaining) # Never 0 if still running
         elif job["status"] == "pending":
-            remaining = 150
+            remaining = 300
+            
+    res = dict(job)
+    # Filter out internal tracking fields for cleaner API
+    internal_keys = ['last_remaining', 'last_update', 'render_started_at']
+    for k in internal_keys: res.pop(k, None)
+    
+    res["time_metrics"] = {
+        "elapsed": elapsed,
+        "remaining": remaining
+    }
+    return jsonify(res)
             
     res = dict(job)
     res["time_metrics"] = {
